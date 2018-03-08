@@ -1,0 +1,173 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.44.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+      body {
+		  margin: 0;
+		  padding: 0;
+		  font-family: 'Helvetica Neue', Helvetica, Arial, Sans-serif;
+		}
+
+      #map {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 100%;
+      }
+      
+      h1 {
+		  font-size: 20px;
+		  line-height: 30px;
+		}
+
+		h2 {
+		  font-size: 14px;
+		  line-height: 20px;
+		  margin-bottom: 10px;
+		}
+
+		a {
+		  text-decoration: none;
+		  color: #2dc4b2;
+		}
+
+		#console {
+		  position: absolute;
+		  width: 240px;
+		  margin: 10px;
+		  padding: 10px 20px;
+		  background-color: white;
+		}
+      
+    </style>
+</head>
+<body>
+  <div id='map'></div>
+  <div id='console'>
+		  <h1>Coral Bleaching Heatmap</h1>
+		  <p>Data: <a href='http://www.reefbase.org/contribute/bleachingreport.aspx'>Coral Bleaching Events</a></p>
+		
+			<div class='session' id='sliderbar'>
+				  <h2>Year: <label id='active-year'>1963</label></h2>
+				  <input id='slider' class='row' type='range' min='1963' max='2012' step='1' value='1963' />
+				</div>
+							
+		</div>
+  
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoienBvcGVnZW8iLCJhIjoiY2lrbzdnb3N1MHZ1OXRpajdnZ2djemxxbiJ9.0LjHdtDRlFfKdPHEuJUGag';
+    var map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/dark-v9',
+      
+    });
+    
+
+
+   // we will add more code here in the next steps
+   
+   map.on('load', function() {
+	   
+       
+    // Add a geojson point source.
+    // Heatmap layers also work with a vector tile source.
+    map.addSource('coral', {
+        "type": "geojson",
+        "data": "./coral.geojson",
+            
+    });
+
+	
+
+    map.addLayer({
+
+
+        "id": "coral-heat",
+        "type": "heatmap",
+        "source": "coral",
+        "maxzoom": 9,
+        "filter": ["==", "YEAR", "1963"],
+        "paint": {
+            // Increase the heatmap weight based on frequency and property magnitude
+            "heatmap-weight": [
+                "interpolate",
+                ["linear"],
+                ["get", "SEVERITY_CODE"],
+                0, 0,
+                3, 1
+            ],
+            // Increase the heatmap color weight weight by zoom level
+            // heatmap-intensity is a multiplier on top of heatmap-weight
+            "heatmap-intensity": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                0, 1,
+                9, 3
+            ],
+            // Color ramp for heatmap.  Domain is 0 (low) to 1 (high).
+            // Begin color ramp at 0-stop with a 0-transparancy color
+            // to create a blur-like effect.
+            "heatmap-color": [
+                "interpolate",
+                ["linear"],
+                ["heatmap-density"],
+                0, "rgba(33,102,172,0)",
+                0.2, "rgb(103,169,207)",
+                0.4, "rgb(209,229,240)",
+                0.6, "rgb(253,219,199)",
+                0.8, "rgb(239,138,98)",
+                1, "rgb(178,24,43)"
+            ],
+            // Adjust the heatmap radius by zoom level
+            "heatmap-radius": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                0, 2,
+                9, 20
+            ],
+            // Transition from heatmap to circle layer by zoom level
+            "heatmap-opacity": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                7, 1,
+                9, 0
+            ],
+        }
+        
+		 
+		
+
+    }, 'waterway-label');
+
+    
+	
+    document.getElementById('slider').addEventListener('input', function(e) {
+		  var year = parseInt(e.target.value);
+		  // update the map
+		  map.setFilter('coral-heat', ['==', ['to-number',["get", "YEAR"]], year]);
+
+		
+		  // update text in the UI
+		  document.getElementById('active-year').innerText = year;
+		  
+	  });
+	
+    
+    
+});
+
+		
+
+
+ </script>
+</body>
+</html>
